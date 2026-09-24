@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { QueryProvider } from "@/app/react-query"
 import { lightTheme } from './theme';
 
 interface ClientProvidersProps {
@@ -9,9 +10,11 @@ interface ClientProvidersProps {
 
 export default function ClientProviders({ children }: ClientProvidersProps) {
     return (
-        <ThemeProvider theme={lightTheme} >
-            <CssBaseline />
-            {children}
-        </ThemeProvider>
+        <QueryProvider>
+            <ThemeProvider theme={lightTheme} >
+                <CssBaseline />
+                {children}
+            </ThemeProvider>
+        </QueryProvider>
     );
 }
