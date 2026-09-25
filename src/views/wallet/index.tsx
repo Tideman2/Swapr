@@ -8,8 +8,10 @@ import {
     Card,
     CardContent,
     Typography,
+    Box
 } from "@mui/material";
-
+import type { RatesResponse } from "@/types/rate";
+import { formatMoney } from "@/lib/money/format-money";
 import type {
     BalancesResponse,
     CurrencyCode,
@@ -18,6 +20,7 @@ import type {
 import BalanceList from "./components/BalanceList";
 import BalanceListSkeleton from "./components/BalanceListSkeleton";
 import CurrencySelector from "./components/CurrencySelector";
+import { calculateTotalBalance } from "./helpers/calculate-total-balance";
 
 export default function WalletOverview() {
     const [selectedCurrency, setSelectedCurrency] =
@@ -28,14 +31,27 @@ export default function WalletOverview() {
             queryKey: ["balances"],
             queryFn: async () => {
                 const response = await fetch("/api/balances");
-
                 if (!response.ok) {
                     throw new Error("Failed to fetch balances");
                 }
-
                 return response.json();
             },
         });
+
+    const { data: rates } = useQuery<RatesResponse>({
+        queryKey: ["live_rates", selectedCurrency],
+        queryFn: async () => {
+            const response = await fetch(
+                `/api/rates?base=${selectedCurrency}`,
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch rates");
+            }
+
+            return response.json();
+        },
+    });
 
     if (isLoading) {
         return (
@@ -93,17 +109,42 @@ export default function WalletOverview() {
         );
     }
 
+    const totalBalance = rates
+        ? calculateTotalBalance(
+            data.balances,
+            rates.rates,
+            selectedCurrency,
+        )
+        : null;
+
     return (
         <>
-            <h1>Wallet overview</h1>
+            <Typography
+                variant="h1"
+                gutterBottom
+            >
+                Wallet overview
+            </Typography>
 
-            <CurrencySelector
-                value={selectedCurrency}
-                currencies={data.balances.map(
-                    (balance) => balance.currency,
-                )}
-                onChange={setSelectedCurrency}
-            />
+            <Box sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 1
+            }}>
+
+                <CurrencySelector
+                    value={selectedCurrency}
+                    currencies={data.balances.map(
+                        (balance) => balance.currency,
+                    )}
+                    onChange={setSelectedCurrency}
+                />
+
+                <Typography>
+                    {formatMoney(totalBalance ?? "0", selectedCurrency)} {selectedCurrency}
+                </Typography>
+            </Box>
 
             <BalanceList
                 balances={data.balances}

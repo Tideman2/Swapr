@@ -1,5 +1,6 @@
 import { Card, CardContent, Typography } from "@mui/material";
 
+import { formatMoney } from "@/lib/money/format-money";
 import { MEDIA_QUERY_BREAKPOINTS } from "@/layout/constants/media-query-breakpoints";
 import type { Balance } from "@/types/wallet";
 
@@ -37,7 +38,7 @@ export default function BalanceItem({
                 </Typography>
 
                 <Typography variant="h5">
-                    {balance.amount}
+                    {formatMoney(balance.amount, balance.currency)}
                 </Typography>
             </CardContent>
         </Card>

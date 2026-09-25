@@ -8,8 +8,7 @@ export async function getBalances(): Promise<BalancesResponse> {
 
     return {
         balances: walletState.balances.map((balance) => ({
-            ...balance,
-            amount: formatMoney(balance.amount, balance.currency)
+            ...balance
         })),
     };
 }
