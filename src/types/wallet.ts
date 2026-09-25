@@ -8,3 +8,7 @@ export interface Balance {
 export interface BalancesResponse {
     balances: Balance[];
 }
+
+export const SUPPORTED_CURRENCIES = [
+    "NGN", "USD", "GBP", "EUR", "JPY"
+]
