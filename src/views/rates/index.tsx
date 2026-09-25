@@ -1,119 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Big from "big.js";
 import { useQuery } from "@tanstack/react-query";
 
-import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
-import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
-import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import {
     Alert,
     Box,
     Button,
-    Chip,
     CircularProgress,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
     Stack,
-    Tooltip,
     Typography,
-    type SelectChangeEvent,
 } from "@mui/material";
 
 import { useMediaQuery } from "@/layout/hooks/useMediaQuery";
 import type { RatesResponse } from "@/types/rate";
+import type { CurrencyCode } from "@/types/wallet";
+
+import BaseCurrencySelector from "./components/BaseCurrencySelector";
+import RateRow from "./components/RateRow";
+import RateStatus from "./components/RateStatus";
 import {
-    SUPPORTED_CURRENCIES,
-    type CurrencyCode,
-} from "@/types/wallet";
+    getRateDirection,
+    type RateDirection,
+} from "./helpers/get-rate-direction";
 
 const RATES_STALE_THRESHOLD_MS = 15_000;
-
-type RateDirection = "up" | "down" | "unchanged";
-
-function getRateDirection(
-    previous: string,
-    current: string,
-): RateDirection {
-    const previousRate = new Big(previous);
-    const currentRate = new Big(current);
-
-    if (currentRate.gt(previousRate)) {
-        return "up";
-    }
-
-    if (currentRate.lt(previousRate)) {
-        return "down";
-    }
-
-    return "unchanged";
-}
-
-function formatLastUpdated(
-    timestamp: string,
-    now: number,
-): string {
-    const elapsed = Math.max(
-        0,
-        Math.floor((now - new Date(timestamp).getTime()) / 1000),
-    );
-
-    if (elapsed < 1) {
-        return "just now";
-    }
-
-    return `${elapsed} second${elapsed === 1 ? "" : "s"} ago`;
-}
-
-interface MovementIndicatorProps {
-    currency: CurrencyCode;
-    direction: RateDirection;
-}
-
-function MovementIndicator({
-    currency,
-    direction,
-}: MovementIndicatorProps) {
-    const label =
-        direction === "up"
-            ? `${currency} rate increased`
-            : direction === "down"
-              ? `${currency} rate decreased`
-              : `${currency} rate unchanged`;
-
-    return (
-        <Tooltip title={label}>
-            <Box
-                component="span"
-                aria-label={label}
-                sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                }}
-            >
-                {direction === "up" ? (
-                    <ArrowUpwardRoundedIcon
-                        fontSize="small"
-                        color="success"
-                    />
-                ) : direction === "down" ? (
-                    <ArrowDownwardRoundedIcon
-                        fontSize="small"
-                        color="error"
-                    />
-                ) : (
-                    <RemoveRoundedIcon
-                        fontSize="small"
-                        color="disabled"
-                    />
-                )}
-            </Box>
-        </Tooltip>
-    );
-}
 
 export default function LiveRates() {
     const [base, setBase] = useState<CurrencyCode>("USD");
@@ -208,6 +119,10 @@ export default function LiveRates() {
           RATES_STALE_THRESHOLD_MS
         : false;
 
+    const handleBaseChange = (currency: CurrencyCode) => {
+        setBase(currency);
+    };
+
     return (
         <Box>
             <Typography
@@ -217,33 +132,11 @@ export default function LiveRates() {
                 Live rates
             </Typography>
 
-            <FormControl
-                size="small"
-                sx={isMobile
-                    ? { width: "100%" }
-                    : { minWidth: 200 }}
-            >
-                <InputLabel>Base currency</InputLabel>
-
-                <Select
-                    value={base}
-                    label="Base currency"
-                    onChange={(event: SelectChangeEvent) =>
-                        setBase(
-                            event.target.value as CurrencyCode,
-                        )
-                    }
-                >
-                    {SUPPORTED_CURRENCIES.map((currency) => (
-                        <MenuItem
-                            key={currency}
-                            value={currency}
-                        >
-                            {currency}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
+            <BaseCurrencySelector
+                value={base}
+                onChange={handleBaseChange}
+                isMobile={isMobile}
+            />
 
             {isLoading && !data && (
                 <Box
@@ -281,63 +174,14 @@ export default function LiveRates() {
 
             {data && (
                 <>
-                    <Stack
-                        direction={
-                            isMobile ? "column" : "row"
-                        }
-                        spacing={1}
-                        sx={
-                            isMobile
-                                ? {
-                                      mt: 2,
-                                      mb: 2,
-                                      alignItems:
-                                          "flex-start",
-                                  }
-                                : {
-                                      mt: 2,
-                                      mb: 2,
-                                      alignItems: "center",
-                                  }
-                        }
-                    >
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                        >
-                            Last updated{" "}
-                            {formatLastUpdated(
-                                data.timestamp,
-                                now,
-                            )}
-                        </Typography>
-
-                        {isStale && (
-                            <Chip
-                                label="Stale"
-                                size="small"
-                                color="warning"
-                            />
-                        )}
-
-                        {isFetching && !isError && (
-                            <Chip
-                                label="Updating..."
-                                size="small"
-                                variant="outlined"
-                                color="info"
-                            />
-                        )}
-
-                        {isError && (
-                            <Chip
-                                label="Update failed, retrying…"
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                            />
-                        )}
-                    </Stack>
+                    <RateStatus
+                        timestamp={data.timestamp}
+                        now={now}
+                        isStale={isStale}
+                        isFetching={isFetching}
+                        isError={isError}
+                        isMobile={isMobile}
+                    />
 
                     <Stack spacing={1}>
                         {(
@@ -350,39 +194,15 @@ export default function LiveRates() {
                             }
 
                             return (
-                                <Box
+                                <RateRow
                                     key={currency}
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent:
-                                            "space-between",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <Typography variant="body2">
-                                        {currency}
-                                    </Typography>
-
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <Typography variant="body2">
-                                            {value}
-                                        </Typography>
-
-                                        <MovementIndicator
-                                            currency={currency}
-                                            direction={
-                                                directions[currency] ??
-                                                "unchanged"
-                                            }
-                                        />
-                                    </Box>
-                                </Box>
+                                    currency={currency}
+                                    value={value}
+                                    direction={
+                                        directions[currency] ??
+                                        "unchanged"
+                                    }
+                                />
                             );
                         })}
                     </Stack>
