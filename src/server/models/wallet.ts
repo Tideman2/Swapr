@@ -4,7 +4,3 @@ export interface Wallet {
     currencies: Balance[];
     convertions: []
 }
-
-export interface BalancesResponse {
-    balances: Balance[];
-}
