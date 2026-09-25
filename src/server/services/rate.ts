@@ -15,6 +15,44 @@ export class InvalidCurrencyError extends Error {
     }
 }
 
+// export async function getRates(
+//     base: string
+// ): Promise<RatesResponse> {
+//     if (!isSupportedCurrency(base)) {
+//         throw new InvalidCurrencyError(base);
+//     }
+
+//     const drift = generateRateDrift();
+
+//     for (const currency of Object.keys(marketRates) as CurrencyCode[]) {
+//         marketRates[currency] = applyRateDrift(
+//             marketRates[currency],
+//             drift
+//         );
+//     }
+
+//     const baseRate = marketRates[base];
+
+//     const rates: Partial<Record<CurrencyCode, string>> = {};
+
+//     for (const currency of Object.keys(marketRates) as CurrencyCode[]) {
+//         if (currency === base) {
+//             continue;
+//         }
+
+//         rates[currency] = calculateRelativeRate(
+//             marketRates[currency],
+//             baseRate
+//         );
+//     }
+
+//     return {
+//         base,
+//         rates,
+//         timestamp: new Date().toISOString(),
+//     };
+// }
+
 export async function getRates(
     base: string
 ): Promise<RatesResponse> {
@@ -22,9 +60,12 @@ export async function getRates(
         throw new InvalidCurrencyError(base);
     }
 
-    const drift = generateRateDrift();
+    for (
+        const currency
+        of Object.keys(marketRates) as CurrencyCode[]
+    ) {
+        const drift = generateRateDrift();
 
-    for (const currency of Object.keys(marketRates) as CurrencyCode[]) {
         marketRates[currency] = applyRateDrift(
             marketRates[currency],
             drift
@@ -35,7 +76,10 @@ export async function getRates(
 
     const rates: Partial<Record<CurrencyCode, string>> = {};
 
-    for (const currency of Object.keys(marketRates) as CurrencyCode[]) {
+    for (
+        const currency
+        of Object.keys(marketRates) as CurrencyCode[]
+    ) {
         if (currency === base) {
             continue;
         }

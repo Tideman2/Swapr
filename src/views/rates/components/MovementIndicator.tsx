@@ -16,6 +16,7 @@ export default function MovementIndicator({
     currency,
     direction,
 }: MovementIndicatorProps) {
+    console.log(direction)
     let label = `${currency} rate unchanged`;
 
     if (direction === "up") {

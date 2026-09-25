@@ -112,11 +112,12 @@ export default function LiveRates() {
             base: data.base,
             rates: data.rates,
         };
+        console.log(data, lastSnapshotRef)
     }, [data]);
 
     const isStale = data
         ? now - new Date(data.timestamp).getTime() >=
-          RATES_STALE_THRESHOLD_MS
+        RATES_STALE_THRESHOLD_MS
         : false;
 
     const handleBaseChange = (currency: CurrencyCode) => {
